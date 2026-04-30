@@ -1,0 +1,19 @@
+{
+  "name": "redgifs-overhaul",
+  "version": "1.0.0",
+  "description": "A userscript to overhaul the user experience of RedGifs.",
+  "main": "src/main.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "keywords": [],
+  "author": "spookspookspookspook",
+  "license": "ISC",
+  "type": "module",
+  "devDependencies": {
+    "vite": "^7.3.2",
+    "vite-plugin-monkey": "^7.1.9"
+  }
+}
