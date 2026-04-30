@@ -1,5 +1,9 @@
 import { defineConfig } from 'vite';
 import monkey from 'vite-plugin-monkey';
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url);
+const pkg = require('./package.json');
 
 export default defineConfig({
   plugins: [
@@ -11,7 +15,7 @@ export default defineConfig({
         match: ['*://*.redgifs.com/*'],
         description: 'Massively overhaul the redgifs.com experience',
         author: 'spookspookspookspook',
-        version: '1.0.0',
+        version: pkg.version,
         license: 'MIT',
       },
       build: {
