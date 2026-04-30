@@ -17,19 +17,29 @@ export function buildPanel() {
         <button id="rgf-collapse-btn" title="Expand">▼</button>
       </div>
       <div class="rgf-body">
-        <div class="rgf-section-label">Tag Filters</div>
+        <div class="rgf-section-row">
+          <div class="rgf-section-label">Tag Filters <span class="rgf-section-count" id="rgf-tag-count"></span></div>
+          <button class="rgf-clear-btn" id="rgf-tag-clear" style="display:none">clear all</button>
+        </div>
         <div class="rgf-input-row">
           <input id="rgf-tag-input" type="text" placeholder="amateur  /  *feet*  /  solo*" />
           <button class="rgf-add-btn" id="rgf-tag-add">+</button>
         </div>
-        <div class="rgf-pill-list" id="rgf-tag-pills"></div>
+        <div class="rgf-pill-list-wrap" id="rgf-tag-pills-wrap">
+          <div class="rgf-pill-list" id="rgf-tag-pills"></div>
+        </div>
 
-        <div class="rgf-section-label">Username Filters</div>
+        <div class="rgf-section-row">
+          <div class="rgf-section-label">Username Filters <span class="rgf-section-count" id="rgf-user-count"></span></div>
+          <button class="rgf-clear-btn" id="rgf-user-clear" style="display:none">clear all</button>
+        </div>
         <div class="rgf-input-row">
           <input id="rgf-user-input" type="text" placeholder="real username or display name" />
           <button class="rgf-add-btn" id="rgf-user-add">+</button>
         </div>
-        <div class="rgf-pill-list" id="rgf-user-pills"></div>
+        <div class="rgf-pill-list-wrap" id="rgf-user-pills-wrap">
+          <div class="rgf-pill-list" id="rgf-user-pills"></div>
+        </div>
 
         <div class="rgf-hint">
           <b>*word*</b> contains &nbsp;·&nbsp; <b>word*</b> starts &nbsp;·&nbsp;
@@ -51,7 +61,7 @@ export function buildPanel() {
         colBtn.textContent = collapsed ? '▼' : '▲';
     });
 
-    function renderPills(id, arr, onRemove) {
+    function renderPills(id, arr, onRemove, countId, wrapId, clearId) {
         const container = panel.querySelector('#' + id);
         container.innerHTML = '';
         arr.forEach((f, i) => {
@@ -65,6 +75,19 @@ export function buildPanel() {
             pill.appendChild(x);
             container.appendChild(pill);
         });
+        // Update count badge
+        const countEl = panel.querySelector('#' + countId);
+        if (countEl) countEl.textContent = arr.length ? `(${arr.length})` : '';
+        // Show/hide clear-all button
+        const clearEl = panel.querySelector('#' + clearId);
+        if (clearEl) clearEl.style.display = arr.length ? '' : 'none';
+        // Toggle overflow fade
+        const wrap = panel.querySelector('#' + wrapId);
+        if (wrap) {
+            requestAnimationFrame(() => {
+                wrap.classList.toggle('rgf-overflowing', container.scrollHeight > container.clientHeight);
+            });
+        }
     }
 
     function updateCount() {
@@ -90,8 +113,8 @@ export function buildPanel() {
     refreshPanel = () => {
         const tagFilters = getTagFilters();
         const userFilters = getUserFilters();
-        renderPills('rgf-tag-pills', tagFilters, i => removeTagFilter(i));
-        renderPills('rgf-user-pills', userFilters, i => removeUserFilter(i));
+        renderPills('rgf-tag-pills', tagFilters, i => removeTagFilter(i), 'rgf-tag-count', 'rgf-tag-pills-wrap', 'rgf-tag-clear');
+        renderPills('rgf-user-pills', userFilters, i => removeUserFilter(i), 'rgf-user-count', 'rgf-user-pills-wrap', 'rgf-user-clear');
         updateCount();
     };
 
@@ -115,6 +138,8 @@ export function buildPanel() {
     panel.querySelector('#rgf-user-add').addEventListener('click', () => addFilterFromInput('rgf-user-input', addUserFilter));
     panel.querySelector('#rgf-tag-input').addEventListener('keydown', e => { if (e.key === 'Enter') addFilterFromInput('rgf-tag-input', addTagFilter); });
     panel.querySelector('#rgf-user-input').addEventListener('keydown', e => { if (e.key === 'Enter') addFilterFromInput('rgf-user-input', addUserFilter); });
+    panel.querySelector('#rgf-tag-clear').addEventListener('click', () => { getTagFilters().slice().reverse().forEach((_, i, a) => removeTagFilter(a.length - 1 - i)); });
+    panel.querySelector('#rgf-user-clear').addEventListener('click', () => { getUserFilters().slice().reverse().forEach((_, i, a) => removeUserFilter(a.length - 1 - i)); });
     
     panel.querySelector('#rgf-apply').addEventListener('click', () => { 
         applyFeedFilters(); 

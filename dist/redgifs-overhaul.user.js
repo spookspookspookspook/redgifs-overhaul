@@ -322,19 +322,29 @@
         <button id="rgf-collapse-btn" title="Expand">▼</button>
       </div>
       <div class="rgf-body">
-        <div class="rgf-section-label">Tag Filters</div>
+        <div class="rgf-section-row">
+          <div class="rgf-section-label">Tag Filters <span class="rgf-section-count" id="rgf-tag-count"></span></div>
+          <button class="rgf-clear-btn" id="rgf-tag-clear" style="display:none">clear all</button>
+        </div>
         <div class="rgf-input-row">
           <input id="rgf-tag-input" type="text" placeholder="amateur  /  *feet*  /  solo*" />
           <button class="rgf-add-btn" id="rgf-tag-add">+</button>
         </div>
-        <div class="rgf-pill-list" id="rgf-tag-pills"></div>
+        <div class="rgf-pill-list-wrap" id="rgf-tag-pills-wrap">
+          <div class="rgf-pill-list" id="rgf-tag-pills"></div>
+        </div>
 
-        <div class="rgf-section-label">Username Filters</div>
+        <div class="rgf-section-row">
+          <div class="rgf-section-label">Username Filters <span class="rgf-section-count" id="rgf-user-count"></span></div>
+          <button class="rgf-clear-btn" id="rgf-user-clear" style="display:none">clear all</button>
+        </div>
         <div class="rgf-input-row">
           <input id="rgf-user-input" type="text" placeholder="real username or display name" />
           <button class="rgf-add-btn" id="rgf-user-add">+</button>
         </div>
-        <div class="rgf-pill-list" id="rgf-user-pills"></div>
+        <div class="rgf-pill-list-wrap" id="rgf-user-pills-wrap">
+          <div class="rgf-pill-list" id="rgf-user-pills"></div>
+        </div>
 
         <div class="rgf-hint">
           <b>*word*</b> contains &nbsp;·&nbsp; <b>word*</b> starts &nbsp;·&nbsp;
@@ -354,7 +364,7 @@
       panel.classList.toggle("rgf-collapsed", collapsed);
       colBtn.textContent = collapsed ? "▼" : "▲";
     });
-    function renderPills(id, arr, onRemove) {
+    function renderPills(id, arr, onRemove, countId, wrapId, clearId) {
       const container = panel.querySelector("#" + id);
       container.innerHTML = "";
       arr.forEach((f, i) => {
@@ -368,6 +378,16 @@
         pill.appendChild(x);
         container.appendChild(pill);
       });
+      const countEl = panel.querySelector("#" + countId);
+      if (countEl) countEl.textContent = arr.length ? `(${arr.length})` : "";
+      const clearEl = panel.querySelector("#" + clearId);
+      if (clearEl) clearEl.style.display = arr.length ? "" : "none";
+      const wrap = panel.querySelector("#" + wrapId);
+      if (wrap) {
+        requestAnimationFrame(() => {
+          wrap.classList.toggle("rgf-overflowing", container.scrollHeight > container.clientHeight);
+        });
+      }
     }
     function updateCount() {
       const hiddenFeed = document.querySelectorAll(".GifPreview.rgf-filtered").length;
@@ -387,8 +407,8 @@
     refreshPanel = () => {
       const tagFilters2 = getTagFilters();
       const userFilters2 = getUserFilters();
-      renderPills("rgf-tag-pills", tagFilters2, (i) => removeTagFilter(i));
-      renderPills("rgf-user-pills", userFilters2, (i) => removeUserFilter(i));
+      renderPills("rgf-tag-pills", tagFilters2, (i) => removeTagFilter(i), "rgf-tag-count", "rgf-tag-pills-wrap", "rgf-tag-clear");
+      renderPills("rgf-user-pills", userFilters2, (i) => removeUserFilter(i), "rgf-user-count", "rgf-user-pills-wrap", "rgf-user-clear");
       updateCount();
     };
     subscribe(() => {
@@ -412,6 +432,12 @@
     });
     panel.querySelector("#rgf-user-input").addEventListener("keydown", (e) => {
       if (e.key === "Enter") addFilterFromInput("rgf-user-input", addUserFilter);
+    });
+    panel.querySelector("#rgf-tag-clear").addEventListener("click", () => {
+      getTagFilters().slice().reverse().forEach((_, i, a) => removeTagFilter(a.length - 1 - i));
+    });
+    panel.querySelector("#rgf-user-clear").addEventListener("click", () => {
+      getUserFilters().slice().reverse().forEach((_, i, a) => removeUserFilter(a.length - 1 - i));
     });
     panel.querySelector("#rgf-apply").addEventListener("click", () => {
       applyFeedFilters();
@@ -501,14 +527,37 @@
 }
 #rgf-collapse-btn:hover { color: #aaa; }
 
+.rgf-section-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin: 12px 0 5px;
+}
 .rgf-section-label {
   font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: #555;
-  margin: 12px 0 5px;
   font-weight: 600;
+  margin: 0;
 }
+.rgf-section-count {
+  color: #ff4455;
+  margin-left: 4px;
+  font-size: 9px;
+}
+.rgf-clear-btn {
+  background: none;
+  border: none;
+  color: #444;
+  cursor: pointer;
+  font-size: 9px;
+  padding: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: color 0.15s;
+}
+.rgf-clear-btn:hover { color: #ff4455; }
 .rgf-input-row { display: flex; gap: 6px; }
 .rgf-input-row input {
   flex: 1;
@@ -537,13 +586,38 @@
 }
 .rgf-add-btn:hover { background: #ff6677; }
 
+.rgf-pill-list-wrap {
+  position: relative;
+  margin-top: 7px;
+}
+.rgf-pill-list-wrap::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 6px;
+  height: 28px;
+  background: linear-gradient(to bottom, transparent, #161616);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.rgf-pill-list-wrap.rgf-overflowing::after { opacity: 1; }
 .rgf-pill-list {
   display: flex;
   flex-wrap: wrap;
   gap: 5px;
-  margin-top: 7px;
+  max-height: 100px;
+  overflow-y: auto;
   min-height: 4px;
+  padding-bottom: 2px;
+  scrollbar-width: thin;
+  scrollbar-color: #3a3a3a #1e1e1e;
 }
+.rgf-pill-list::-webkit-scrollbar { width: 5px; }
+.rgf-pill-list::-webkit-scrollbar-track { background: #1e1e1e; border-radius: 3px; }
+.rgf-pill-list::-webkit-scrollbar-thumb { background: #3a3a3a; border-radius: 3px; }
+.rgf-pill-list::-webkit-scrollbar-thumb:hover { background: #555; }
 .rgf-panel-pill {
   display: flex;
   align-items: center;

@@ -103,14 +103,37 @@ GM_addStyle(`
 }
 #rgf-collapse-btn:hover { color: #aaa; }
 
+.rgf-section-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin: 12px 0 5px;
+}
 .rgf-section-label {
   font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: #555;
-  margin: 12px 0 5px;
   font-weight: 600;
+  margin: 0;
 }
+.rgf-section-count {
+  color: #ff4455;
+  margin-left: 4px;
+  font-size: 9px;
+}
+.rgf-clear-btn {
+  background: none;
+  border: none;
+  color: #444;
+  cursor: pointer;
+  font-size: 9px;
+  padding: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: color 0.15s;
+}
+.rgf-clear-btn:hover { color: #ff4455; }
 .rgf-input-row { display: flex; gap: 6px; }
 .rgf-input-row input {
   flex: 1;
@@ -139,13 +162,38 @@ GM_addStyle(`
 }
 .rgf-add-btn:hover { background: #ff6677; }
 
+.rgf-pill-list-wrap {
+  position: relative;
+  margin-top: 7px;
+}
+.rgf-pill-list-wrap::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 6px;
+  height: 28px;
+  background: linear-gradient(to bottom, transparent, #161616);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.rgf-pill-list-wrap.rgf-overflowing::after { opacity: 1; }
 .rgf-pill-list {
   display: flex;
   flex-wrap: wrap;
   gap: 5px;
-  margin-top: 7px;
+  max-height: 100px;
+  overflow-y: auto;
   min-height: 4px;
+  padding-bottom: 2px;
+  scrollbar-width: thin;
+  scrollbar-color: #3a3a3a #1e1e1e;
 }
+.rgf-pill-list::-webkit-scrollbar { width: 5px; }
+.rgf-pill-list::-webkit-scrollbar-track { background: #1e1e1e; border-radius: 3px; }
+.rgf-pill-list::-webkit-scrollbar-thumb { background: #3a3a3a; border-radius: 3px; }
+.rgf-pill-list::-webkit-scrollbar-thumb:hover { background: #555; }
 .rgf-panel-pill {
   display: flex;
   align-items: center;
