@@ -59,6 +59,16 @@ export function unsubscribe(callback) {
     subscribers.delete(callback);
 }
 
+export function clearTagFilters() {
+    tagFilters = [];
+    saveStorage();
+}
+
+export function clearUserFilters() {
+    userFilters = [];
+    saveStorage();
+}
+
 function notifySubscribers() {
     subscribers.forEach(cb => cb());
 }

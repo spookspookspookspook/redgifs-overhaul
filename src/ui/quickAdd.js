@@ -32,9 +32,14 @@ export function buildStrip(cardEl, infoBar) {
 
     const filterValue = userName || displayName;
     const sameOrNoReal = !userName || displayName.toLowerCase() === userName.toLowerCase();
-    const pillLabel = displayName
-        ? (sameOrNoReal ? '@' + displayName : '@' + displayName + ' (' + userName + ')')
-        : '@' + userName;
+    let pillLabel;
+    if (!displayName) {
+        pillLabel = '@' + userName;
+    } else if (sameOrNoReal) {
+        pillLabel = '@' + displayName;
+    } else {
+        pillLabel = `@${displayName} (${userName})`;
+    }
 
     if (filterValue) {
         const pill = makePill(pillLabel, 'rgf-strip-pill rgf-user-pill', () => {

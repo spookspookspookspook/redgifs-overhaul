@@ -1,6 +1,6 @@
 {
   "name": "redgifs-overhaul",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "A userscript to overhaul the user experience of RedGifs.",
   "main": "src/main.js",
   "scripts": {

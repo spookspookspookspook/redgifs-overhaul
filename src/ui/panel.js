@@ -1,6 +1,6 @@
 // src/ui/panel.js
 
-import { getTagFilters, getUserFilters, addTagFilter, removeTagFilter, addUserFilter, removeUserFilter, subscribe } from '../state.js';
+import { getTagFilters, getUserFilters, addTagFilter, removeTagFilter, addUserFilter, removeUserFilter, clearTagFilters, clearUserFilters, subscribe } from '../state.js';
 import { applyFeedFilters } from '../filters/feed.js';
 import { applyExploreFilters } from '../filters/explore.js';
 import { syncStripStates } from './quickAdd.js';
@@ -68,64 +68,10 @@ export function buildPanel() {
         } catch (e) {}
     }
 
-    let isDragging = false;
-    let dragHasMoved = false;
-    let initialX = 0;
-    let initialY = 0;
-
-    header.style.cursor = 'grab';
-
-    header.addEventListener('mousedown', (e) => {
-        if (e.target === colBtn) return;
-        isDragging = true;
-        dragHasMoved = false;
-        header.style.cursor = 'grabbing';
-        
-        const rect = panel.getBoundingClientRect();
-        initialX = e.clientX - rect.left;
-        initialY = e.clientY - rect.top;
-        
-        document.addEventListener('mousemove', drag);
-        document.addEventListener('mouseup', dragEnd);
-    });
-
-    function drag(e) {
-        if (!isDragging) return;
-        dragHasMoved = true;
-        e.preventDefault();
-        
-        let currentX = e.clientX - initialX;
-        let currentY = e.clientY - initialY;
-        
-        // Keep panel somewhat visible
-        currentX = Math.max(0, Math.min(currentX, window.innerWidth - 50));
-        currentY = Math.max(0, Math.min(currentY, window.innerHeight - 30));
-        
-        panel.style.left = currentX + 'px';
-        panel.style.top = currentY + 'px';
-        panel.style.right = 'auto';
-    }
-
-    function dragEnd() {
-        if (!isDragging) return;
-        isDragging = false;
-        header.style.cursor = 'grab';
-        document.removeEventListener('mousemove', drag);
-        document.removeEventListener('mouseup', dragEnd);
-        
-        if (dragHasMoved) {
-            localStorage.setItem('rgf_panel_pos', JSON.stringify({
-                top: panel.style.top,
-                left: panel.style.left
-            }));
-        }
-    }
+    const checkDragMoved = setupDragging(panel, header, 'rgf_panel_pos');
 
     header.addEventListener('click', (e) => {
-        if (dragHasMoved) {
-            dragHasMoved = false;
-            return;
-        }
+        if (checkDragMoved()) return;
         collapsed = !collapsed;
         panel.classList.toggle('rgf-collapsed', collapsed);
         colBtn.textContent = collapsed ? '▼' : '▲';
@@ -208,8 +154,8 @@ export function buildPanel() {
     panel.querySelector('#rgf-user-add').addEventListener('click', () => addFilterFromInput('rgf-user-input', addUserFilter));
     panel.querySelector('#rgf-tag-input').addEventListener('keydown', e => { if (e.key === 'Enter') addFilterFromInput('rgf-tag-input', addTagFilter); });
     panel.querySelector('#rgf-user-input').addEventListener('keydown', e => { if (e.key === 'Enter') addFilterFromInput('rgf-user-input', addUserFilter); });
-    panel.querySelector('#rgf-tag-clear').addEventListener('click', () => { getTagFilters().slice().reverse().forEach((_, i, a) => removeTagFilter(a.length - 1 - i)); });
-    panel.querySelector('#rgf-user-clear').addEventListener('click', () => { getUserFilters().slice().reverse().forEach((_, i, a) => removeUserFilter(a.length - 1 - i)); });
+    panel.querySelector('#rgf-tag-clear').addEventListener('click', clearTagFilters);
+    panel.querySelector('#rgf-user-clear').addEventListener('click', clearUserFilters);
     
     panel.querySelector('#rgf-apply').addEventListener('click', () => { 
         applyFeedFilters(); 
@@ -219,4 +165,66 @@ export function buildPanel() {
 
     setInterval(updateCount, 2000);
     refreshPanel();
+}
+
+function setupDragging(element, handle, storageKey) {
+    let isDragging = false;
+    let dragHasMoved = false;
+    let initialX = 0;
+    let initialY = 0;
+
+    handle.style.cursor = 'grab';
+
+    handle.addEventListener('mousedown', (e) => {
+        if (e.target.tagName === 'BUTTON') return;
+        isDragging = true;
+        dragHasMoved = false;
+        handle.style.cursor = 'grabbing';
+        
+        const rect = element.getBoundingClientRect();
+        initialX = e.clientX - rect.left;
+        initialY = e.clientY - rect.top;
+        
+        document.addEventListener('mousemove', drag);
+        document.addEventListener('mouseup', dragEnd);
+    });
+
+    function drag(e) {
+        if (!isDragging) return;
+        dragHasMoved = true;
+        e.preventDefault();
+        
+        let currentX = e.clientX - initialX;
+        let currentY = e.clientY - initialY;
+        
+        currentX = Math.max(0, Math.min(currentX, window.innerWidth - 50));
+        currentY = Math.max(0, Math.min(currentY, window.innerHeight - 30));
+        
+        element.style.left = currentX + 'px';
+        element.style.top = currentY + 'px';
+        element.style.right = 'auto';
+    }
+
+    function dragEnd() {
+        if (!isDragging) return;
+        isDragging = false;
+        handle.style.cursor = 'grab';
+        document.removeEventListener('mousemove', drag);
+        document.removeEventListener('mouseup', dragEnd);
+        
+        if (dragHasMoved) {
+            localStorage.setItem(storageKey, JSON.stringify({
+                top: element.style.top,
+                left: element.style.left
+            }));
+        }
+    }
+    
+    return () => {
+        if (dragHasMoved) {
+            dragHasMoved = false;
+            return true;
+        }
+        return false;
+    };
 }
