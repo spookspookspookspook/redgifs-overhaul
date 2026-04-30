@@ -1,12 +1,12 @@
 {
   "name": "redgifs-overhaul",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A userscript to overhaul the user experience of RedGifs.",
   "main": "src/main.js",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "build:prod": "bun version patch --no-git-tag-version && vite build",
+    "build:prod": "npm version patch --no-git-tag-version && vite build",
     "preview": "vite preview"
   },
   "keywords": [],

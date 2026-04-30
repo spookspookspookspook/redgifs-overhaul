@@ -17,6 +17,8 @@ export default defineConfig({
         author: 'spookspookspookspook',
         version: pkg.version,
         license: 'MIT',
+        updateURL: 'https://github.com/spookspookspookspook/redgifs-overhaul/raw/refs/heads/main/dist/redgifs-overhaul.user.js',
+        downloadURL: 'https://github.com/spookspookspookspook/redgifs-overhaul/raw/refs/heads/main/dist/redgifs-overhaul.user.js',
       },
       build: {
         externalGlobals: {},

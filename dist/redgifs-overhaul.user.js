@@ -1,10 +1,12 @@
 // ==UserScript==
 // @name         Redgifs Overhaul
 // @namespace    npm/vite-plugin-monkey
-// @version      1.0.0
+// @version      1.0.1
 // @author       spookspookspookspook
 // @description  Massively overhaul the redgifs.com experience
 // @license      MIT
+// @downloadURL  https://github.com/spookspookspookspook/redgifs-overhaul/raw/refs/heads/main/dist/redgifs-overhaul.user.js
+// @updateURL    https://github.com/spookspookspookspook/redgifs-overhaul/raw/refs/heads/main/dist/redgifs-overhaul.user.js
 // @match        *://*.redgifs.com/*
 // @grant        GM_addStyle
 // @grant        GM_getValue
