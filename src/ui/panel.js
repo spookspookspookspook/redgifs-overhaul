@@ -55,7 +55,77 @@ export function buildPanel() {
 
     let collapsed = true;
     const colBtn = panel.querySelector('#rgf-collapse-btn');
-    panel.querySelector('#rgf-header').addEventListener('click', () => {
+    const header = panel.querySelector('#rgf-header');
+    
+    // Load position from local storage
+    const savedPos = localStorage.getItem('rgf_panel_pos');
+    if (savedPos) {
+        try {
+            const pos = JSON.parse(savedPos);
+            panel.style.top = pos.top;
+            panel.style.left = pos.left;
+            panel.style.right = 'auto'; // override default css
+        } catch (e) {}
+    }
+
+    let isDragging = false;
+    let dragHasMoved = false;
+    let initialX = 0;
+    let initialY = 0;
+
+    header.style.cursor = 'grab';
+
+    header.addEventListener('mousedown', (e) => {
+        if (e.target === colBtn) return;
+        isDragging = true;
+        dragHasMoved = false;
+        header.style.cursor = 'grabbing';
+        
+        const rect = panel.getBoundingClientRect();
+        initialX = e.clientX - rect.left;
+        initialY = e.clientY - rect.top;
+        
+        document.addEventListener('mousemove', drag);
+        document.addEventListener('mouseup', dragEnd);
+    });
+
+    function drag(e) {
+        if (!isDragging) return;
+        dragHasMoved = true;
+        e.preventDefault();
+        
+        let currentX = e.clientX - initialX;
+        let currentY = e.clientY - initialY;
+        
+        // Keep panel somewhat visible
+        currentX = Math.max(0, Math.min(currentX, window.innerWidth - 50));
+        currentY = Math.max(0, Math.min(currentY, window.innerHeight - 30));
+        
+        panel.style.left = currentX + 'px';
+        panel.style.top = currentY + 'px';
+        panel.style.right = 'auto';
+    }
+
+    function dragEnd() {
+        if (!isDragging) return;
+        isDragging = false;
+        header.style.cursor = 'grab';
+        document.removeEventListener('mousemove', drag);
+        document.removeEventListener('mouseup', dragEnd);
+        
+        if (dragHasMoved) {
+            localStorage.setItem('rgf_panel_pos', JSON.stringify({
+                top: panel.style.top,
+                left: panel.style.left
+            }));
+        }
+    }
+
+    header.addEventListener('click', (e) => {
+        if (dragHasMoved) {
+            dragHasMoved = false;
+            return;
+        }
         collapsed = !collapsed;
         panel.classList.toggle('rgf-collapsed', collapsed);
         colBtn.textContent = collapsed ? '▼' : '▲';
