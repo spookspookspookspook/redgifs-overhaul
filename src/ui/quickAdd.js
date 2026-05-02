@@ -17,15 +17,19 @@ function makePill(text, cls, onClick) {
 export function buildStrip(cardEl, infoBar) {
     if (infoBar.querySelector('.rgf-quick-strip')) return;
     const { userName, displayName, tags } = getCardInfo(cardEl);
-    if (!userName && !displayName && !tags.length) return;
 
     const strip = document.createElement('div');
     strip.className = 'rgf-quick-strip';
 
-    const label = document.createElement('span');
-    label.className = 'rgf-strip-label';
-    label.textContent = 'Filter:';
-    strip.appendChild(label);
+    const filterArea = document.createElement('div');
+    filterArea.className = 'rgf-filter-area';
+    
+    if (userName || displayName || tags.length) {
+        const label = document.createElement('span');
+        label.className = 'rgf-strip-label';
+        label.textContent = 'Filter:';
+        filterArea.appendChild(label);
+    }
 
     const userFilters = getUserFilters();
     const tagFilters = getTagFilters();
@@ -53,7 +57,7 @@ export function buildStrip(cardEl, infoBar) {
         });
         const already = userFilters.some(f => matchesAny(userName, [f]) || matchesAny(displayName, [f]));
         if (already) { pill.classList.add('rgf-pill-active'); pill.disabled = true; }
-        strip.appendChild(pill);
+        filterArea.appendChild(pill);
     }
 
     tags.forEach(tag => {
@@ -67,8 +71,14 @@ export function buildStrip(cardEl, infoBar) {
             pill.disabled = true;
         });
         if (tagFilters.some(f => matchesAny(tag, [f]))) { pill.classList.add('rgf-pill-active'); pill.disabled = true; }
-        strip.appendChild(pill);
+        filterArea.appendChild(pill);
     });
+
+    strip.appendChild(filterArea);
+    
+    const actionArea = document.createElement('div');
+    actionArea.className = 'rgf-action-area';
+    strip.appendChild(actionArea);
 
     infoBar.appendChild(strip);
 }

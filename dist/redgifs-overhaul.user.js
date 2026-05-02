@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Redgifs Overhaul
 // @namespace    npm/vite-plugin-monkey
-// @version      1.0.3
+// @version      1.0.4
 // @author       spookspookspookspook
 // @description  Massively overhaul the redgifs.com experience
 // @license      MIT
@@ -249,13 +249,16 @@
   function buildStrip(cardEl, infoBar) {
     if (infoBar.querySelector(".rgf-quick-strip")) return;
     const { userName, displayName, tags } = getCardInfo(cardEl);
-    if (!userName && !displayName && !tags.length) return;
     const strip = document.createElement("div");
     strip.className = "rgf-quick-strip";
-    const label = document.createElement("span");
-    label.className = "rgf-strip-label";
-    label.textContent = "Filter:";
-    strip.appendChild(label);
+    const filterArea = document.createElement("div");
+    filterArea.className = "rgf-filter-area";
+    if (userName || displayName || tags.length) {
+      const label = document.createElement("span");
+      label.className = "rgf-strip-label";
+      label.textContent = "Filter:";
+      filterArea.appendChild(label);
+    }
     const userFilters2 = getUserFilters();
     const tagFilters2 = getTagFilters();
     const filterValue = userName || displayName;
@@ -283,7 +286,7 @@
         pill.classList.add("rgf-pill-active");
         pill.disabled = true;
       }
-      strip.appendChild(pill);
+      filterArea.appendChild(pill);
     }
     tags.forEach((tag) => {
       const pill = makePill("#" + tag, "rgf-strip-pill rgf-tag-pill", () => {
@@ -299,8 +302,12 @@
         pill.classList.add("rgf-pill-active");
         pill.disabled = true;
       }
-      strip.appendChild(pill);
+      filterArea.appendChild(pill);
     });
+    strip.appendChild(filterArea);
+    const actionArea = document.createElement("div");
+    actionArea.className = "rgf-action-area";
+    strip.appendChild(actionArea);
     infoBar.appendChild(strip);
   }
   function syncStripStates() {
@@ -523,6 +530,125 @@
       return false;
     };
   }
+  async function downloadVideo(videoId, hdUrl) {
+    const normalizedId = videoId.toLowerCase();
+    try {
+      const url = hdUrl;
+      const extension = url.split(".").pop().split(/[?#]/)[0] || "mp4";
+      const filename = `redgifs-${normalizedId}.${extension}`;
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Server responded with ${response.status}`);
+      }
+      const videoBlob = await response.blob();
+      const objectUrl = URL.createObjectURL(videoBlob);
+      const link = document.createElement("a");
+      link.href = objectUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(objectUrl);
+    } catch (error) {
+      console.error("[RG Overhaul] Download failed:", error);
+      alert("Download failed: " + error.message);
+    }
+  }
+  function openCleanViewer(videoId, hdUrl, userName = "") {
+    videoId.toLowerCase();
+    const watchUrl = `https://www.redgifs.com/watch/${videoId}`;
+    if (!hdUrl) {
+      window.open(watchUrl, "_blank");
+      return;
+    }
+    const pageTitle = userName ? `${userName} - ${videoId}` : `RedGIFs - ${videoId}`;
+    const newWindow = window.open("", "_blank");
+    if (!newWindow) {
+      alert("Popup blocked. Please allow popups for this site.");
+      return;
+    }
+    try {
+      newWindow.opener = null;
+    } catch {
+    }
+    const doc = newWindow.document;
+    try {
+      if (!doc.head) doc.documentElement.appendChild(doc.createElement("head"));
+      if (!doc.body) doc.documentElement.appendChild(doc.createElement("body"));
+    } catch (e) {
+      newWindow.location.href = watchUrl;
+      return;
+    }
+    doc.title = pageTitle;
+    Object.assign(doc.body.style, {
+      margin: "0",
+      padding: "0",
+      backgroundColor: "#000",
+      height: "100vh",
+      width: "100vw",
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      overflow: "hidden",
+      fontFamily: "sans-serif"
+    });
+    const styleEl = doc.createElement("style");
+    styleEl.textContent = `
+    video { max-width: 100%; max-height: 100%; outline: none; box-shadow: 0 0 20px rgb(0 0 0 / 0.5); }
+    .back-link { position: absolute; top: 16px; right: 16px; color: rgb(255 255 255 / 0.5); text-decoration: none; background: rgb(0 0 0 / 0.5); padding: 8px 12px; border-radius: 4px; font-size: 14px; backdrop-filter: blur(4px); transition: 0.2s; z-index: 9999; }
+    .back-link:hover { color: #fff; background: rgb(0 0 0 / 0.8); }
+  `;
+    doc.head.appendChild(styleEl);
+    const videoEl = doc.createElement("video");
+    videoEl.src = hdUrl;
+    videoEl.controls = true;
+    videoEl.autoplay = true;
+    videoEl.loop = true;
+    videoEl.muted = true;
+    videoEl.playsInline = true;
+    doc.body.appendChild(videoEl);
+    const linkEl = doc.createElement("a");
+    linkEl.href = watchUrl;
+    linkEl.className = "back-link";
+    linkEl.target = "_blank";
+    linkEl.rel = "noopener noreferrer";
+    linkEl.textContent = "Open Original Page";
+    doc.body.appendChild(linkEl);
+  }
+  function injectDownloadButtons(cardEl) {
+    const infoBar = cardEl.querySelector(".GifPreview-InfoAndSidebar");
+    if (!infoBar) return;
+    const actionArea = infoBar.querySelector(".rgf-action-area");
+    if (!actionArea) return;
+    if (actionArea.querySelector(".rgvdb-open-btn")) return;
+    const gif = getGifFiber(cardEl);
+    if (!gif || !gif.id) return;
+    const videoId = gif.id.toLowerCase();
+    const openBtn = document.createElement("button");
+    openBtn.className = "rgf-strip-pill rgvdb-open-btn";
+    openBtn.title = "Play in Clean Viewer";
+    openBtn.innerHTML = "▶ Clean View";
+    openBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      openCleanViewer(videoId, gif.urls?.hd, gif.userName);
+    });
+    actionArea.appendChild(openBtn);
+    const downloadBtn = document.createElement("button");
+    downloadBtn.className = "rgf-strip-pill rgvdb-download-btn";
+    downloadBtn.title = "Download HD Video";
+    downloadBtn.innerHTML = "📥 Download";
+    downloadBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (gif.urls?.hd) {
+        downloadVideo(videoId, gif.urls.hd);
+      } else {
+        alert("HD video URL not found!");
+      }
+    });
+    actionArea.appendChild(downloadBtn);
+  }
   function applyAllFilters() {
     applyFeedFilters();
     applyExploreFilters();
@@ -533,6 +659,7 @@
       applyAllFilters();
       injectStrips();
       checkAndAttachExploreObserver();
+      document.querySelectorAll(".GifPreview").forEach(injectDownloadButtons);
     }
   });
   function init() {
@@ -542,6 +669,7 @@
       applyAllFilters();
       injectStrips();
       checkAndAttachExploreObserver();
+      document.querySelectorAll(".GifPreview").forEach(injectDownloadButtons);
     }, 1500);
     globalObserver.observe(document.body, { childList: true, subtree: true });
   }
@@ -748,7 +876,6 @@
 }
 
 /* ── Quick-add hover strip ── */
-.GifPreview-InfoAndSidebar { position: relative; }
 .rgf-quick-strip {
   position: absolute;
   bottom: 100%;
@@ -756,8 +883,8 @@
   right: 46px;
   z-index: 20;
   display: none;
-  flex-wrap: wrap;
-  align-items: center;
+  justify-content: space-between;
+  align-items: flex-end;
   gap: 5px;
   padding: 7px 10px;
   background: linear-gradient(to top, rgba(0,0,0,0.92), rgba(0,0,0,0.65));
@@ -836,6 +963,46 @@
   box-shadow: 0 4px 20px rgba(0,0,0,0.6);
 }
 #rgf-toast.rgf-toast-show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ── Layout Areas ── */
+.rgf-filter-area {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+  flex: 1;
+}
+.rgf-action-area {
+  display: flex;
+  align-items: flex-end;
+  gap: 5px;
+  margin-left: 10px;
+  flex-shrink: 0;
+}
+
+/* ── Download & Clean Viewer Buttons ── */
+.rgvdb-open-btn {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #eee;
+  font-weight: bold;
+}
+.rgvdb-open-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: #fff;
+  color: #fff;
+}
+.rgvdb-download-btn {
+  background: rgba(255, 68, 85, 0.25);
+  border: 1px solid rgba(255, 68, 85, 0.4);
+  color: #ff8899;
+  font-weight: bold;
+}
+.rgvdb-download-btn:hover {
+  background: rgba(255, 68, 85, 0.5);
+  border-color: #ff4455;
+  color: #fff;
+}
 `);
 
 })();

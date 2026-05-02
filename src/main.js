@@ -16,6 +16,7 @@ import { buildPanel } from './ui/panel.js';
 import { applyFeedFilters } from './filters/feed.js';
 import { applyExploreFilters, checkAndAttachExploreObserver } from './filters/explore.js';
 import { injectStrips } from './ui/quickAdd.js';
+import { injectDownloadButtons } from './ui/downloadButton.js';
 
 function applyAllFilters() {
   applyFeedFilters();
@@ -28,6 +29,7 @@ const globalObserver = new MutationObserver(mutations => {
     applyAllFilters();
     injectStrips();
     checkAndAttachExploreObserver();
+    document.querySelectorAll('.GifPreview').forEach(injectDownloadButtons);
   }
 });
 
@@ -39,6 +41,7 @@ function init() {
     applyAllFilters();
     injectStrips();
     checkAndAttachExploreObserver();
+    document.querySelectorAll('.GifPreview').forEach(injectDownloadButtons);
   }, 1500);
 
   globalObserver.observe(document.body, { childList: true, subtree: true });
@@ -248,7 +251,6 @@ GM_addStyle(`
 }
 
 /* ── Quick-add hover strip ── */
-.GifPreview-InfoAndSidebar { position: relative; }
 .rgf-quick-strip {
   position: absolute;
   bottom: 100%;
@@ -256,8 +258,8 @@ GM_addStyle(`
   right: 46px;
   z-index: 20;
   display: none;
-  flex-wrap: wrap;
-  align-items: center;
+  justify-content: space-between;
+  align-items: flex-end;
   gap: 5px;
   padding: 7px 10px;
   background: linear-gradient(to top, rgba(0,0,0,0.92), rgba(0,0,0,0.65));
@@ -336,4 +338,44 @@ GM_addStyle(`
   box-shadow: 0 4px 20px rgba(0,0,0,0.6);
 }
 #rgf-toast.rgf-toast-show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ── Layout Areas ── */
+.rgf-filter-area {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+  flex: 1;
+}
+.rgf-action-area {
+  display: flex;
+  align-items: flex-end;
+  gap: 5px;
+  margin-left: 10px;
+  flex-shrink: 0;
+}
+
+/* ── Download & Clean Viewer Buttons ── */
+.rgvdb-open-btn {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #eee;
+  font-weight: bold;
+}
+.rgvdb-open-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: #fff;
+  color: #fff;
+}
+.rgvdb-download-btn {
+  background: rgba(255, 68, 85, 0.25);
+  border: 1px solid rgba(255, 68, 85, 0.4);
+  color: #ff8899;
+  font-weight: bold;
+}
+.rgvdb-download-btn:hover {
+  background: rgba(255, 68, 85, 0.5);
+  border-color: #ff4455;
+  color: #fff;
+}
 `);
